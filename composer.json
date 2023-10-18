@@ -1,5 +1,5 @@
 {
-    "name": "kevin/elasticsearch-builder",
+    "name": "kevin-csk/elasticsearch-builder",
     "description": "A similar laravel-query SDK",
     "license": "MIT",
     "authors": [
