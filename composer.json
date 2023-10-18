@@ -1,0 +1,31 @@
+{
+    "name": "kevin/elasticsearch-builder",
+    "description": "A similar laravel-query SDK",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kevin-csk",
+            "email": "2270024421@qq.com"
+        }
+    ],
+    "require": {
+        "elasticsearch/elasticsearch": "^8.10"
+    },
+    "autoload": {
+        "psr-4": {
+            "Kevin\\ElasticsearchBuilder\\": "src"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Kevin\\ElasticsearchBuilder\\ElasticsearchServiceProvider"
+            ]
+        }
+    }
+}
