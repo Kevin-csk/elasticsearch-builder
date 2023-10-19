@@ -19,7 +19,7 @@ class ElasticsearchServiceProvider extends ServiceProvider implements Deferrable
     /**
      * 注册服务提供者.
      */
-    public function register()
+    public function register(): void
     {
         $this->publishes([
             __DIR__.'/../config/elasticsearch.php' => config_path('elasticsearch.php'),
