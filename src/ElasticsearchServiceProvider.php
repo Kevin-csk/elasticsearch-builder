@@ -11,6 +11,7 @@ namespace Kevin\ElasticsearchBuilder;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Support\DeferrableProvider;
+use Kevin\ElasticsearchBuilder\Facades\ElasticsearchBuilder;
 
 class ElasticsearchServiceProvider extends ServiceProvider implements DeferrableProvider
 {
@@ -27,6 +28,8 @@ class ElasticsearchServiceProvider extends ServiceProvider implements Deferrable
         $this->app->singleton('es', function () {
             return new Builder();
         });
+
+        $this->app->alias('ElasticsearchBuilder', ElasticsearchBuilder::class);
     }
 
     /**
