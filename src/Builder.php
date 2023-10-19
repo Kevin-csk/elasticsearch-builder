@@ -11,13 +11,16 @@ namespace Kevin\ElasticsearchBuilder;
 
 use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\ClientBuilder;
+use Elastic\Elasticsearch\Exception\AuthenticationException;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Elastic\Elasticsearch\Response\Elasticsearch;
+use GuzzleHttp\Psr7\Exception\MalformedUriException;
 use Http\Promise\Promise;
 use Kevin\ElasticsearchBuilder\Constants\Logic;
 use Kevin\ElasticsearchBuilder\Constants\Operator;
-use Psr\Log\InvalidArgumentException;
+use Kevin\ElasticsearchBuilder\Exception\InvalidArgumentException;
+use Kevin\ElasticsearchBuilder\Exception\InvalidConfigException;
 
 class Builder
 {
@@ -27,16 +30,17 @@ class Builder
 
     protected Client $build;
 
+    /**
+     * @throws InvalidConfigException
+     */
     public function __construct()
     {
-        // 拼接配置项
+        // 从配置文件读取 Elasticsearch 服务器列表 拼接配置项
         if (config('elasticsearch.username') && config('elasticsearch.password')) {
             $hosts = explode(',', config('elasticsearch.username').':'.config('elasticsearch.password').'@'.config('elasticsearch.host').':'.config('elasticsearch.port'));
         } else {
             $hosts = explode(',', config('elasticsearch.host').':'.config('elasticsearch.port'));
         }
-
-        // 从配置文件读取 Elasticsearch 服务器列表
         $builder = ClientBuilder::create()->setHosts($hosts);
         // 如果是开发环境
         if (app()->isLocal()) {
@@ -44,7 +48,11 @@ class Builder
             $builder->setLogger(app('log')->driver());
         }
 
-        $this->build = $builder->build();
+        try {
+            $this->build = $builder->build();
+        } catch (MalformedUriException|AuthenticationException $exception) {
+            throw new InvalidConfigException('Invalid configuration');
+        }
 
         $this->params = [
             'index' => '',
@@ -314,8 +322,7 @@ class Builder
      *
      * @author Kevin
      * @return Elasticsearch|Promise
-     * @throws ClientResponseException
-     * @throws ServerResponseException
+     * @throws ClientResponseException|InvalidArgumentException|ServerResponseException
      */
     public function get(): Elasticsearch|Promise
     {

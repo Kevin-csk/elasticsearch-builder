@@ -10,15 +10,10 @@ declare(strict_types=1);
 namespace Kevin\ElasticsearchBuilder;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Contracts\Support\DeferrableProvider;
 
-class ElasticsearchServiceProvider extends ServiceProvider
+class ElasticsearchServiceProvider extends ServiceProvider implements DeferrableProvider
 {
-    /**
-     * 标记着提供器是延迟加载的.
-     *
-     * @var bool
-     */
-    protected $defer = true;
 
     /**
      * 注册服务提供者.
