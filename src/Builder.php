@@ -36,12 +36,8 @@ class Builder
     public function __construct()
     {
         // 从配置文件读取 Elasticsearch 服务器列表 拼接配置项
-        if (config('elasticsearch.username') && config('elasticsearch.password')) {
-            $hosts = explode(',', config('elasticsearch.username').':'.config('elasticsearch.password').'@'.config('elasticsearch.host').':'.config('elasticsearch.port'));
-        } else {
-            $hosts = explode(',', config('elasticsearch.host').':'.config('elasticsearch.port'));
-        }
-        $builder = ClientBuilder::create()->setHosts($hosts);
+        $hosts   = explode(',', config('elasticsearch.host').':'.config('elasticsearch.port'));
+        $builder = ClientBuilder::create()->setHosts($hosts)->setBasicAuthentication(config('elasticsearch.username'), config('elasticsearch.password'));
         // 如果是开发环境
         if (app()->isLocal()) {
             // 方便调试
