@@ -1,28 +1,18 @@
-<h1 align="center"> elasticsearch-builder </h1>
+<h1> elasticsearch-builder </h1>
 
-<p align="center"> A similar laravel-query SDK.</p>
+<p> A similar laravel-query SDK.</p>
+<p> 一个类似Laravel-query的SDK</p>
 
 
-## Installing 
+## 安装 
 
 ```shell
 $ composer require kevin/elasticsearch-builder -vvv
+$ php artisan vendor:publish --provider "Kevin\ElasticsearchBuilder\ElasticsearchServiceProvider"
 ```
 
-## Usage
+## 快速使用
 
-TODO
-
-## Contributing
-
-You can contribute in one of three ways:
-
-1. File bug reports using the [issue tracker](https://github.com/kevin/elasticsearch-builder/issues).
-2. Answer questions or fix bugs on the [issue tracker](https://github.com/kevin/elasticsearch-builder/issues).
-3. Contribute new features or update the wiki.
-
-_The code contribution process is not very formal. You just need to make sure that you follow the PSR-0, PSR-1, and PSR-2 coding guidelines. Any new code contributions must be accompanied by unit tests where applicable._
-
-## License
-
-MIT
+```php
+ElasticsearchBuilder::query()->setIndex('your-index')->where('your-field', 1)->get();
+```

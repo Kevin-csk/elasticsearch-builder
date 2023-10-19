@@ -82,19 +82,34 @@ class Builder
     }
 
     /**
-     * 添加分页查询.
+     * 获取一个新的query.
+     * Obtain a new query.
+     *
+     * @author Kevin
+     * @return static
+     */
+    public static function query(): static
+    {
+        return new static();
+    }
+
+    /**
+     * 分页查询.
      * Paginate the given query into a simple paginator.
      *
-     * @param  int   $size
-     * @param  int   $page
-     * @return $this
+     * @param  int                      $pageSize
+     * @param  int                      $page
+     * @return Elasticsearch|Promise
+     * @throws ClientResponseException
+     * @throws InvalidArgumentException
+     * @throws ServerResponseException
      */
-    public function paginate(int $size, int $page): static
+    public function paginate(int $pageSize, int $page = 1): Elasticsearch|Promise
     {
-        $this->params['body']['from'] = ($page - 1) * $size;
-        $this->params['body']['size'] = $size;
+        $this->params['body']['from'] = ($page - 1) * $pageSize;
+        $this->params['body']['size'] = $pageSize;
 
-        return $this;
+        return $this->get();
     }
 
     /**
