@@ -13,6 +13,7 @@ use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\ClientBuilder;
 use Elastic\Elasticsearch\Exception\AuthenticationException;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
+use Elastic\Elasticsearch\Exception\MissingParameterException;
 use Elastic\Elasticsearch\Exception\ServerResponseException;
 use Elastic\Elasticsearch\Response\Elasticsearch;
 use GuzzleHttp\Psr7\Exception\MalformedUriException;
@@ -24,6 +25,8 @@ use Kevin\ElasticsearchBuilder\Exception\InvalidConfigException;
 
 class Builder
 {
+    protected string $index = '';
+
     protected array $params = [];
 
     protected array $functions = [];
@@ -65,14 +68,14 @@ class Builder
 
     /**
      * 设置索引.
-     * set index.
+     * Set index.
      *
      * @param  string $index
      * @return $this
      */
     public function setIndex(string $index): static
     {
-        $this->params['index'] = $index;
+        $this->index = $index;
 
         return $this;
     }
@@ -87,6 +90,112 @@ class Builder
     public static function query(): static
     {
         return new static();
+    }
+
+    /**
+     * 根据id刷新单条数据.
+     * Refresh individual data based on ID.
+     *
+     * @author Kevin
+     * @param  array                     $data
+     * @param  mixed                     $id
+     * @return true
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
+     */
+    public function create(array $data, mixed $id): bool
+    {
+        $this->build->index([
+            'index' => $this->index,
+            'type'  => '_doc',
+            'id'    => $id,
+            'body'  => $data,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * 创建索引.
+     * Create index.
+     *
+     * @author Kevin
+     * @param  string                    $index
+     * @return bool
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
+     */
+    public function createIndex(string $index): bool
+    {
+        $this->build->indices()->create(['index' => $index]);
+
+        return true;
+    }
+
+    /**
+     * 删除索引.
+     * Delete index.
+     *
+     * @author Kevin
+     * @param  string                    $index
+     * @return bool
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
+     */
+    public function deleteIndex(string $index): bool
+    {
+        $this->build->indices()->delete(['index' => $index]);
+
+        return true;
+    }
+
+    /**
+     * 初始化单条数据.
+     * Init single data.
+     *
+     * @author Kevin
+     * @param  array                   $data
+     * @param  array                   $structure
+     * @param  mixed                   $id
+     * @return true
+     * @throws ClientResponseException
+     * @throws ServerResponseException
+     */
+    public function initData(array $data, array $structure, mixed $id): bool
+    {
+        $this->_setParams(properties: $structure);
+
+        $this->syncData(data: $data, id: $id);
+
+        return true;
+    }
+
+    /**
+     * 同步数据.
+     * Sync data.
+     *
+     * @author Kevin
+     * @param  array                   $data
+     * @param  mixed                   $id
+     * @throws ClientResponseException
+     * @throws ServerResponseException
+     */
+    public function syncData(array $data, mixed $id): void
+    {
+        // 初始化请求
+        $res['body'][] = [
+            'index' => [
+                '_index' => $this->index,
+                '_id'    => $id,
+            ],
+        ];
+        $res['body'][] = [$data];
+
+        // 使用 bulk 方法批量创建
+        $this->build->bulk($res);
     }
 
     /**
@@ -329,7 +438,7 @@ class Builder
 
     /**
      * 获取搜索结果.
-     * search.
+     * Search.
      *
      * @author Kevin
      * @return Elasticsearch|Promise
@@ -337,10 +446,31 @@ class Builder
      */
     public function get(): Elasticsearch|Promise
     {
-        if (empty($this->params['index'])) {
+        if (empty($this->index)) {
             throw new InvalidArgumentException('Invalid parameter [index].');
         }
+        $this->params['index'] = $this->index;
 
         return $this->build->search($this->params);
+    }
+
+    /**
+     * 设置索引结构.
+     * Set index structure.
+     *
+     * @author Kevin
+     * @param mixed $properties
+     */
+    private function _setParams(array $properties): void
+    {
+        $this->params = [
+            'index' => $this->index,
+            'body'  => [
+                '_source' => [
+                    'enabled' => true,
+                ],
+                'properties' => $properties,
+            ],
+        ];
     }
 }
