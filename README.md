@@ -28,13 +28,16 @@ return [
 ```php
 use Kevin\ElasticsearchBuilder\Facades\ElasticsearchBuilder;
 
-// 创建索引 create index
+// 创建索引 Create index
 $your_index = ElasticsearchBuilder::query()->createIndex('your-index');
 
-// 新增或编辑单条数据 create|update single  data
-ElasticsearchBuilder::query()->setIndex('your-index')->create('your-data', 'your-id');
+// 初始化结构数据 Init structure
+ElasticsearchBuilder::query()->initMap('your-index', 'your-structure');
 
-// 搜索 search
+// 新增或编辑单条数据 Create|Update single  data
+ElasticsearchBuilder::query()->setIndex('your-index')->sync('your-data', 'your-id');
+
+// 搜索 Search
 ElasticsearchBuilder::query()->setIndex('your-index')->where('your-field', 1)->get();
 
 ```

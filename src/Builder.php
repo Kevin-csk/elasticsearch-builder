@@ -93,8 +93,8 @@ class Builder
     }
 
     /**
-     * 根据id刷新单条数据.
-     * Refresh individual data based on ID.
+     * 根据id同步单条数据.
+     * Synchronize individual data based on ID.
      *
      * @author Kevin
      * @param  array                     $data
@@ -104,13 +104,34 @@ class Builder
      * @throws MissingParameterException
      * @throws ServerResponseException
      */
-    public function create(array $data, mixed $id): bool
+    public function sync(array $data, mixed $id): bool
     {
         $this->build->index([
             'index' => $this->index,
             'type'  => '_doc',
             'id'    => $id,
             'body'  => $data,
+        ]);
+
+        return true;
+    }
+
+    /**
+     * 根据id删除单条数据.
+     * Delete a single piece of data based on ID.
+     *
+     * @author Kevin
+     * @param  mixed                     $id
+     * @return true
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
+     */
+    public function delete(mixed $id): bool
+    {
+        $this->build->delete([
+            'index' => $this->index,
+            'id'    => $id,
         ]);
 
         return true;
@@ -153,24 +174,30 @@ class Builder
     }
 
     /**
-     * 初始化单条数据.
-     * Init single data.
+     * 初始化结构.
+     * Init Mapping.
      *
      * @author Kevin
-     * @param  array                   $data
-     * @param  array                   $structure
-     * @param  mixed                   $id
-     * @return true
+     * @param  string                    $index
+     * @param  array                     $properties
+     * @return Elasticsearch|Promise
      * @throws ClientResponseException
+     * @throws MissingParameterException
      * @throws ServerResponseException
      */
-    public function initData(array $data, array $structure, mixed $id): bool
+    public function initMap(string $index, array $properties): Elasticsearch|Promise
     {
-        $this->_setParams(properties: $structure);
+        $params = [
+            'index' => $index,
+            'body'  => [
+                '_source' => [
+                    'enabled' => true,
+                ],
+                'properties' => $properties,
+            ],
+        ];
 
-        $this->syncData(data: $data, id: $id);
-
-        return true;
+        return $this->build->indices()->putMapping($params);
     }
 
     /**
