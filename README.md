@@ -31,7 +31,7 @@ use Kevin\ElasticsearchBuilder\Facades\ElasticsearchBuilder;
 // 创建索引 Create index
 $your_index = ElasticsearchBuilder::query()->createIndex('your-index');
 
-// 初始化结构数据 Init structure
+// 初始化结构 Init structure
 ElasticsearchBuilder::query()->initMap('your-index', 'your-structure');
 
 // 新增或编辑单条数据 Create|Update single  data
