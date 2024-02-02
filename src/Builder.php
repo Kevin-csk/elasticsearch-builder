@@ -174,6 +174,22 @@ class Builder
     }
 
     /**
+     * 索引是否存在.
+     * Exists index.
+     *
+     * @author Kevin
+     * @param  string                    $index
+     * @return bool
+     * @throws ClientResponseException
+     * @throws MissingParameterException
+     * @throws ServerResponseException
+     */
+    public function indexExists(string $index): bool
+    {
+        return $this->build->indices()->exists(['index' => $index])->asBool();
+    }
+
+    /**
      * 初始化结构.
      * Init Mapping.
      *
@@ -231,12 +247,12 @@ class Builder
      *
      * @param  int                      $pageSize
      * @param  int                      $page
-     * @return Elasticsearch|Promise
+     * @return array
      * @throws ClientResponseException
      * @throws InvalidArgumentException
      * @throws ServerResponseException
      */
-    public function paginate(int $pageSize, int $page = 1): Elasticsearch|Promise
+    public function paginate(int $pageSize, int $page = 1): array
     {
         $this->params['body']['from'] = ($page - 1) * $pageSize;
         $this->params['body']['size'] = $pageSize;
@@ -409,23 +425,51 @@ class Builder
      * Add a where clause - nested query.
      *
      * @author Kevin
-     * @param  string $path
-     * @param  string $fields
-     * @param  mixed  $value
-     * @param  string $logic
-     * @param  string $queryType
+     * @param string $path
+     * @param string $fields
+     * @param mixed  $value
+     * @param string $logic
+     * @param string $queryType
+     * @param bool   $isFunction
      * @return $this
      */
-    public function whereNested(string $path, string $fields, mixed $value, string $logic = '||', string $queryType = 'term'): static
+    public function whereNested(string $path, string $fields, mixed $value, string $logic = '||', string $queryType = 'term', bool $isFunction = true): static
     {
-        $this->params['body']['query']['bool'][Logic::tryFrom($logic)->logic()][] = [
-            'nested' => [
-                'path'  => $path,
-                'query' => [
-                    $queryType => [$fields => $value],
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                $condition = [
+                    'nested' => [
+                        'path'  => $path,
+                        'query' => [
+                            $queryType => [$fields => $item],
+                        ],
+                    ],
+                ];
+                $this->params['body']['query']['bool'][Logic::tryFrom($logic)->logic()][] = $condition;
+                if ($isFunction) {
+                    $this->functions[] = [
+                        'filter' => $condition,
+                        'weight' => 2,
+                    ];
+                }
+            }
+        } else {
+            $condition = [
+                'nested' => [
+                    'path'  => $path,
+                    'query' => [
+                        $queryType => [$fields => $value],
+                    ],
                 ],
-            ],
-        ];
+            ];
+            $this->params['body']['query']['bool'][Logic::tryFrom($logic)->logic()][] = $condition;
+            if ($isFunction) {
+                $this->functions[] = [
+                    'filter' => $condition,
+                    'weight' => 2,
+                ];
+            }
+        }
 
         return $this;
     }
@@ -453,6 +497,67 @@ class Builder
         return $this;
     }
 
+    // code:分组标识,path:聚合单词名,field:聚合字段,field_type:字段es类型
+    /*
+     * $arr = [
+     *      [
+     *          'code' => '标签',
+     *          'path' => 'tags',
+     *          'field_type' => '',
+     *          'child' => [
+     *              [
+     *                  'code' => '标签名称',
+     *                  'path' => 'tags.name',
+     *                  'field_type' => '',
+     *              ]
+     *           ]
+     *      ],
+     *      [
+     *          'code' => 'category',
+     *          'path' => 'category',
+     *          'field_type' => '',
+     *          'child' => [
+     *              [
+     *                  'code' => 'category.name',
+     *                  'path' => 'category.name',
+     *                  'field_type' => '',
+     *                  'child' => [
+     *                      [
+     *                          'code' => 'category.value',
+     *                          'path' => 'category.value',
+     *                          'field_type' => '',
+     *                      ]
+     *                  ]
+     *              ]
+     *           ]
+     *      ]
+     * ];
+     */
+    public function aggs($arr)
+    {
+        $this->getAggs($arr);
+
+        return $this;
+    }
+
+    public function getAggs(array $items, array $aggregations = [])
+    {
+        foreach ($items as $item) {
+            $aggregations['aggs'] = [
+                $item['code'] => [
+                    'nested' => [
+                        'path' => $item['path'],
+                    ],
+                ],
+            ];
+            if (!empty($item['child'])) {
+                return $this->getAggs($item, $aggregations['aggs']);
+            }
+
+            return $aggregations;
+        }
+    }
+
     /**
      * 返回构造好的查询参数.
      *
@@ -468,17 +573,17 @@ class Builder
      * Search.
      *
      * @author Kevin
-     * @return Elasticsearch|Promise
+     * @return array
      * @throws ClientResponseException|InvalidArgumentException|ServerResponseException
      */
-    public function get(): Elasticsearch|Promise
+    public function get(): array
     {
         if (empty($this->index)) {
             throw new InvalidArgumentException('Invalid parameter [index].');
         }
         $this->params['index'] = $this->index;
 
-        return $this->build->search($this->params);
+        return $this->build->search($this->params)->asArray();
     }
 
     /**
