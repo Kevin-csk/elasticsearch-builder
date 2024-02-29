@@ -475,6 +475,37 @@ class Builder
     }
 
     /**
+     * 添加一个where子句并自定义query查询 - 嵌套查询
+     * Add a where clause and customize the query - nested query.
+     *
+     * @note   whereNestedQuery
+     * @author Kevin
+     * @param  string $path
+     * @param  string $logic
+     * @param  bool   $isFunction
+     * @param  array  $query
+     * @return $this
+     */
+    public function whereNestedQuery(string $path, array $query, string $logic = '||', bool $isFunction = true): static
+    {
+        $condition = [
+            'nested' => [
+                'path'  => $path,
+                'query' => $query,
+            ],
+        ];
+        $this->params['body']['query']['bool'][Logic::tryFrom($logic)->logic()][] = $condition;
+        if ($isFunction) {
+            $this->functions[] = [
+                'filter' => $condition,
+                'weight' => 2,
+            ];
+        }
+
+        return $this;
+    }
+
+    /**
      * 打分.
      * Scoring.
      *
